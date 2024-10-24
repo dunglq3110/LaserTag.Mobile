@@ -2,9 +2,11 @@
 import WebSocketService from './hostWebsocketService';
 import { store } from '../../store/store';
 import { updatePlayerInfo, setConnectionStatus } from '../../store/slices/playerSlice';
+import { setCredit, setUpgrades } from '../../store/slices/upgradesSlice';
 import { BaseMessage, PlayerData } from './hostTypes';
 import Toast from 'react-native-toast-message';
 import { getGunWebSocket } from '../gun/gunGlobalWebSocket';
+import {parseStartBattleMessage} from '../gun/gunTypes';
 
 class HostGlobalWebSocketService {
   private static instance: HostGlobalWebSocketService;
@@ -42,6 +44,23 @@ class HostGlobalWebSocketService {
   private setupMessageHandlers(): void {
     if (!this.wsService) return;
 
+    this.wsService.addMessageListener(21, (frame: BaseMessage) => {
+      console.log('frame data 21:', frame);
+      if (frame?.Data) {
+        // Update the Redux store with the new data
+        store.dispatch(setCredit(frame.Data.Credit));
+        store.dispatch(setUpgrades(frame.Data.Upgrades));
+        
+        Toast.show({
+          type: 'info',  
+          text1: 'Upgrades list!',
+          text2: frame.Message,  
+          position: 'top',  
+          visibilityTime: 4000,
+        });
+      }     
+    });
+
     // Handle player info updates (ActionCode 0)
     this.wsService.addMessageListener(22,(frame: BaseMessage) => {
       console.log('frame data 22:', frame);
@@ -50,6 +69,19 @@ class HostGlobalWebSocketService {
           key: 'players_registering',
           data: frame.Data
         });
+      }
+    });
+
+    this.wsService.addMessageListener(23, (frame: BaseMessage) => {
+      console.log('frame data 23:', frame);
+      if (frame?.Data) {
+        try {
+          // Parse the message directly from frame.Data
+          const battleMessage = parseStartBattleMessage(frame.Data);
+          getGunWebSocket().sendMessage(battleMessage);
+        } catch (error) {
+          console.error('Failed to parse start battle message:', error);
+        }
       }
     });
 
@@ -74,7 +106,7 @@ class HostGlobalWebSocketService {
       }     
     });
 
-   
+    
 
     // Add more global message handlers here
   }

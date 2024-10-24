@@ -21,12 +21,12 @@ const HostConnectionPage: React.FC = () => {
   const [gunMac, setGunMac] = useState(playerInfo.MacGun || '');
   const [vestMac, setVestMac] = useState(playerInfo.MacVest || '');
 
-  const handleJoinGame = () => {
+  const handleJoinGame = async () => {
     if (!hostIP.trim()) {
       Alert.alert('Error', 'Please enter a host IP address');
       return;
     }
-
+    
     if (!playerName.trim()) {
       Alert.alert('Error', 'Please enter a player name');
       return;
@@ -38,14 +38,15 @@ const HostConnectionPage: React.FC = () => {
     }
 
     // Send update message
-    getHostWebSocket().sendMessage(0, 0, "", {
+    await getHostWebSocket().connect('ws://' + hostIP + ':8080/LaserTag');
+    await getHostWebSocket().sendMessage(0, 0, "", {
       Name: playerName,
       MacGun: gunMac,
       MacVest: vestMac
     });
   };
   const handleConnect = () => {
-    getHostWebSocket().connect('ws://' + hostIP + ':8080/LaserTag');
+    
   }
 
   return (
@@ -105,17 +106,6 @@ const HostConnectionPage: React.FC = () => {
   
         {/* Buttons: Image Button and Join Game Button */}
         <View style={styles.buttonRow}>
-          {/* Left Image Button */}
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={handleConnect} // Function for image button action
-          >
-            <Image 
-              source={require('../../../assets/icon.png')} // Path to your image
-              style={styles.iconImage}
-            />
-          </TouchableOpacity>
-  
           {/* Join Game Button */}
           <TouchableOpacity 
             style={styles.connectButton}

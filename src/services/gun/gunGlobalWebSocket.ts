@@ -74,16 +74,7 @@ class GunGlobalWebSocketService {
 
     // Handle battle start
     this.wsService.addMessageListener('start_battle', (message: GunBaseMessage) => {
-      const msg = message as StartBattleMessage;
-      // Handle battle start data
-      console.log('Battle starting with config:', msg.for_gun);
-      Toast.show({
-        type: 'success',
-        text1: 'Battle Starting!',
-        text2: `Damage: ${msg.for_gun.damage}, Health: ${msg.for_gun.health}`,
-        position: 'top',
-        visibilityTime: 4000,
-      });
+
     });
 
     // Add more message handlers as needed

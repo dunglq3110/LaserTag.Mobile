@@ -11,7 +11,28 @@ export interface GunBaseMessage {
   export function isGunBaseMessage(message: any): message is GunBaseMessage {
     return message && typeof message === 'object' && typeof message.key === 'string';
   }
+  function isStartBattleData(data: any): data is StartBattleMessage {
+    return (
+      data &&
+      typeof data === 'object' &&
+      data.key === 'start_battle' &&
+      typeof data.for_gun === 'object' &&
+      typeof data.for_vest === 'object'
+    );
+  }
   
+  // Parser function to ensure type safety
+  export function parseStartBattleMessage(data: any): StartBattleMessage {
+    if (!isStartBattleData(data)) {
+      throw new Error('Invalid start battle message format');
+    }
+    
+    return {
+      key: 'start_battle',
+      for_gun: data.for_gun,
+      for_vest: data.for_vest
+    };
+  }
   // Specific message types
   export interface PlayersRegisteringMessage extends GunBaseMessage {
     key: 'players_registering';
@@ -26,9 +47,10 @@ export interface GunBaseMessage {
   export interface StartBattleMessage extends GunBaseMessage {
     key: 'start_battle';
     for_gun: {
-      damage: number;
-      heal: number;
-      health: number;
+      [key: number]: any;
+    };
+    for_vest: {
+      [key: number]: any;
     };
   }
   export interface SubmitMacMessage extends GunBaseMessage {

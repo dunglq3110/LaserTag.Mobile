@@ -1,6 +1,6 @@
 // src/services/gunWebsocketService.ts
 import { GunBaseMessage, GunMessageHandler, GunWebSocketServiceInterface, isGunBaseMessage } from './gunTypes';
-
+import { getHostWebSocket } from '../host/hostGlobalWebSocket';
 class GunWebSocketService implements GunWebSocketServiceInterface {
   private url: string;
   private ws: WebSocket | null;
@@ -32,7 +32,21 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
 
         this.ws.onmessage = (event: WebSocketMessageEvent) => {
           try {
-            const data = JSON.parse(event.data);
+            const rawData = event.data;
+    
+            // First check if it's a hex string
+            if (typeof rawData === 'string' && this.isHexString(rawData)) {
+              console.log('Received hex string:', rawData);
+              try {
+                getHostWebSocket().sendMessage(102, 0, "", rawData);
+              } catch (error) {
+                console.error('Failed to send hex message:', error);
+              }
+              return;
+            }
+    
+            // If not hex, try to parse as JSON
+            const data = JSON.parse(rawData);
             if (isGunBaseMessage(data)) {
               console.log('Received accepted message:', data);
               this.handleMessage(data);
@@ -40,7 +54,7 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
               console.warn('Received message does not match expected format:', data);
             }
           } catch (error) {
-            console.error('Error parsing message:', error);
+            console.error('Error processing message:', error);
           }
         };
 
@@ -109,6 +123,11 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
 
   public getConnectionStatus(): boolean {
     return this.isConnected;
+  }
+  private isHexString(str: string): boolean {
+    // Regular expression to check if string only contains hex characters
+    const hexRegex = /^[0-9A-Fa-f]+$/;
+    return typeof str === 'string' && hexRegex.test(str);
   }
 }
 

@@ -141,7 +141,7 @@ const WifiConnectionPage: React.FC = () => {
       });
       return;
     }  
-    getGunWebSocket().connect('ws://' + gunIpAddress + ':8081/LaserTag');
+    getGunWebSocket().connect('ws://' + gunIpAddress + ':1234/LaserTag');
   };
   return (
     <View style={styles.container}>
@@ -180,10 +180,6 @@ const WifiConnectionPage: React.FC = () => {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={openWifiModal}>
-            <Image source={require('../../../assets/icon.png')} style={styles.icon} />
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.connectButton} onPress={HandleConnectGunIP}>
             <Text style={styles.buttonText}>Connect</Text>
           </TouchableOpacity>

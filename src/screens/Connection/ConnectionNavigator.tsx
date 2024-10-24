@@ -26,14 +26,6 @@ const ConnectionNavigator = () => {
             headerShown: false,
           }}
         />
-        {/* <ConnectionTab.Screen 
-          name="Credential" 
-          component={CredentialConnectionPage}
-          options={{
-            tabBarLabel: 'Credential',
-            headerShown: false,
-          }}
-        /> */}
       </ConnectionTab.Navigator>
     );
 };
