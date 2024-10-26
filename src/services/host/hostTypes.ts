@@ -9,7 +9,20 @@ export interface PlayerData {
     Name: string;
     MacGun: string;
     MacVest: string;
+    CurrentHealth: number;
+    CurrentArmor: number;
+    CurrentBullet: number;
+    CurrentSSketch: number;
+    TotalDamage: number;
+    TotalHeal: number;
+    TotalShots: number;
+    TotalHits: number;
+    TotalKills: number;
+    TotalAssists: number;
+    TotalDeath: number;
+    Credits: number;
 }
+
   
 export type MessageListener = (data: BaseMessage) => void;
   

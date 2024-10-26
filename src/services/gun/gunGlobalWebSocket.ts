@@ -1,6 +1,6 @@
 // src/services/gunGlobalWebSocket.ts
 import { store } from '../../store/store';
-import { setConnectionStatus, updateMacGun, updateMacVest } from '../../store/slices/playerSlice';
+import { updateHostConnected, updateGunConnected ,updateMacGun, updateMacVest, updateVestConnected } from '../../store/slices/playerSlice';
 import GunWebSocketService from './gunWebsocketService';
 import { GunBaseMessage, PlayersRegisteringMessage, StartBattleMessage, SubmitMacMessage } from './gunTypes';
 import Toast from 'react-native-toast-message';
@@ -31,10 +31,16 @@ class GunGlobalWebSocketService {
       
       try {
         await this.wsService.connect();
-        store.dispatch(setConnectionStatus(true));
+        
       } catch (error) {
         console.error('Failed to connect:', error);
-        store.dispatch(setConnectionStatus(false));
+        store.dispatch(updateGunConnected(false));
+        Toast.show({
+          type: 'error',
+          text1: 'Gun Connection Failed',
+          position: 'top',
+          visibilityTime: 4000,
+        });
         throw error;
       }
     }
@@ -48,11 +54,12 @@ class GunGlobalWebSocketService {
       const msg = message as SubmitMacMessage;
       store.dispatch(updateMacGun(msg.gun_mac));
       store.dispatch(updateMacVest(msg.vest_mac));
+      store.dispatch(updateVestConnected(msg.is_vest_connected));
       console.log('MAC Addresses', msg.gun_mac, msg.vest_mac);
       Toast.show({
         type: 'info',
         text1: 'MAC Addresses Submitted',
-        text2: `Gun: ${msg.gun_mac}, Vest: ${msg.vest_mac}`,
+        text2: `Gun: ${msg.gun_mac} \nVest: ${msg.vest_mac}`,
         position: 'top',
         visibilityTime: 4000,
       });
@@ -72,17 +79,18 @@ class GunGlobalWebSocketService {
       });
     });
 
-    // Handle battle start
-    this.wsService.addMessageListener('start_battle', (message: GunBaseMessage) => {
-
-    });
-
     // Add more message handlers as needed
   }
 
   public sendMessage(message: GunBaseMessage): void {
     if (!this.wsService) {
-      throw new Error('WebSocket not initialized. Call connect() first.');
+      Toast.show({
+        type: 'error',
+        text1: 'Please connect to Gun first',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+      return;
     }
     this.wsService.sendMessage(message);
   }
@@ -90,7 +98,13 @@ class GunGlobalWebSocketService {
   public disconnect(): void {
     if (this.wsService) {
       this.wsService.disconnect();
-      store.dispatch(setConnectionStatus(false));
+      store.dispatch(updateGunConnected(false));
+      Toast.show({
+        type: 'error',
+        text1: 'You are disconnected from Gun',
+        position: 'top',
+        visibilityTime: 4000,
+      });
     }
   }
 

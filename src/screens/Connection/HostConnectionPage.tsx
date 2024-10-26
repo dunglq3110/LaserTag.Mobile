@@ -16,55 +16,25 @@ import { RootState } from '../../store/store';
 
 const HostConnectionPage: React.FC = () => {
   const playerInfo = useSelector((state: RootState) => state.player);
-  const [hostIP, setHostIP] = useState('');
   const [playerName, setPlayerName] = useState(playerInfo.Name || '');
-  const [gunMac, setGunMac] = useState(playerInfo.MacGun || '');
-  const [vestMac, setVestMac] = useState(playerInfo.MacVest || '');
 
-  const handleJoinGame = async () => {
-    if (!hostIP.trim()) {
-      Alert.alert('Error', 'Please enter a host IP address');
-      return;
-    }
-    
+  const handleJoinGame = () => {
+
     if (!playerName.trim()) {
       Alert.alert('Error', 'Please enter a player name');
       return;
     }
-
-    if (!gunMac.trim() || !vestMac.trim()) {
-      Alert.alert('Error', 'Please enter both Gun and Vest MAC addresses');
-      return;
-    }
-
     // Send update message
-    await getHostWebSocket().connect('ws://' + hostIP + ':8080/LaserTag');
-    await getHostWebSocket().sendMessage(0, 0, "", {
+    getHostWebSocket().sendMessage(0, 0, "", {
       Name: playerName,
-      MacGun: gunMac,
-      MacVest: vestMac
+      MacGun: playerInfo.MacGun,
+      MacVest: playerInfo.MacVest
     });
   };
-  const handleConnect = () => {
-    
-  }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.content}>
-        {/* Host IP Address Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Host IP Address</Text>
-          <TextInput
-            style={styles.input}
-            value={hostIP}
-            onChangeText={setHostIP}
-            placeholder="Enter Host IP Address"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            autoCapitalize="none"
-          />
-        </View>
   
         {/* Player Name Input */}
         <View style={styles.inputGroup}>
@@ -77,31 +47,27 @@ const HostConnectionPage: React.FC = () => {
             placeholderTextColor="#999"
           />
         </View>
-  
-        {/* Gun MAC Address Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Gun's MAC Address</Text>
-          <TextInput
-            style={styles.input}
-            value={gunMac}
-            onChangeText={setGunMac}
-            placeholder="Enter Gun's MAC Address"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-          />
-        </View>
-  
-        {/* Vest MAC Address Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Vest's MAC Address</Text>
-          <TextInput
-            style={styles.input}
-            value={vestMac}
-            onChangeText={setVestMac}
-            placeholder="Enter Vest's MAC Address"
-            placeholderTextColor="#999"
-            autoCapitalize="none"
-          />
+
+        {/* Connection Status Display */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>
+            Host Connection: 
+            <Text style={playerInfo.HostConnected ? styles.connectedText : styles.disconnectedText}>
+              {playerInfo.HostConnected ? ' Connected' : ' Disconnected'}
+            </Text>
+          </Text>
+          <Text style={styles.statusText}>
+            Gun Connection: 
+            <Text style={playerInfo.GunConnected ? styles.connectedText : styles.disconnectedText}>
+              {playerInfo.GunConnected ? ' Connected' : ' Disconnected'}
+            </Text>
+          </Text>
+          <Text style={styles.statusText}>
+            Vest Connection: 
+            <Text style={playerInfo.VestConnected ? styles.connectedText : styles.disconnectedText}>
+              {playerInfo.VestConnected ? ' Connected' : ' Disconnected'}
+            </Text>
+          </Text>
         </View>
   
         {/* Buttons: Image Button and Join Game Button */}
@@ -115,7 +81,7 @@ const HostConnectionPage: React.FC = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
   
 };
@@ -176,6 +142,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+  },
+  statusContainer: {
+    paddingHorizontal: 10,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginVertical: 5,
+  },
+  connectedText: {
+    color: 'green',
+  },
+  disconnectedText: {
+    color: 'red',
   },
 });
 

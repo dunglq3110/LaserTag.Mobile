@@ -1,6 +1,10 @@
 // src/services/gunWebsocketService.ts
 import { GunBaseMessage, GunMessageHandler, GunWebSocketServiceInterface, isGunBaseMessage } from './gunTypes';
+import { updateHostConnected, updateGunConnected ,updateMacGun, updateMacVest, updateVestConnected } from '../../store/slices/playerSlice';
+
 import { getHostWebSocket } from '../host/hostGlobalWebSocket';
+import Toast from 'react-native-toast-message';
+import { store } from '../../store/store';
 class GunWebSocketService implements GunWebSocketServiceInterface {
   private url: string;
   private ws: WebSocket | null;
@@ -25,6 +29,13 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
 
         this.ws.onopen = () => {
           console.log('Gun WebSocket Connected');
+          store.dispatch(updateGunConnected(true));
+          Toast.show({
+            type: 'success',
+            text1: 'Connected to Gun',
+            position: 'top',
+            visibilityTime: 4000,
+          });
           this.isConnected = true;
           this.reconnectAttempts = 0;
           resolve();
@@ -55,18 +66,39 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
             }
           } catch (error) {
             console.error('Error processing message:', error);
+            Toast.show({
+              type: 'error',
+              text1: 'Error when sending message',
+              position: 'top',
+              visibilityTime: 4000,
+            });
           }
         };
 
         this.ws.onerror = (event: Event) => {
           const error = event as WebSocketErrorEvent;
           console.error('Gun WebSocket Error:', error);
+          store.dispatch(updateGunConnected(false));
+          Toast.show({
+            type: 'error',
+            text1: 'Something Error with Gun connection!!',
+            text2: 'we will try to reconnect',
+            position: 'top',
+            visibilityTime: 4000,
+          });
           reject(error);
         };
 
         this.ws.onclose = () => {
           console.log('Gun WebSocket Disconnected');
           this.isConnected = false;
+          Toast.show({
+            type: 'error',
+            text1: 'Disconnected from Gun',
+            text2: 'we will try to reconnect',
+            position: 'top',
+            visibilityTime: 4000,
+          });
           this.handleReconnect();
         };
 
@@ -78,12 +110,23 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
   }
 
   private handleReconnect(): void {
+    store.dispatch(updateGunConnected(false));
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
       setTimeout(() => {
         this.connect();
       }, 3000);
+    }
+    else
+    {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to reconnect to Gun',
+        text2: 'Please check your connection and try again',
+        position: 'top',
+        visibilityTime: 4000,
+      });
     }
   }
 
@@ -125,10 +168,12 @@ class GunWebSocketService implements GunWebSocketServiceInterface {
     return this.isConnected;
   }
   private isHexString(str: string): boolean {
-    // Regular expression to check if string only contains hex characters
-    const hexRegex = /^[0-9A-Fa-f]+$/;
-    return typeof str === 'string' && hexRegex.test(str);
+    // Regular expression to check if the string contains only hex characters and "|" separators
+    const hexWithSeparatorRegex = /^[0-9A-Fa-f|]+$/;
+    return typeof str === 'string' && hexWithSeparatorRegex.test(str);
   }
+
+
 }
 
 export default GunWebSocketService;

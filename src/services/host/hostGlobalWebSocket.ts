@@ -1,12 +1,19 @@
 // src/services/globalWebSocket.ts
 import WebSocketService from './hostWebsocketService';
 import { store } from '../../store/store';
-import { updatePlayerInfo, setConnectionStatus } from '../../store/slices/playerSlice';
+import { updatePlayerInfo, updateHostConnected } from '../../store/slices/playerSlice';
 import { setCredit, setUpgrades } from '../../store/slices/upgradesSlice';
+import { setAttributes, updateAttributeValues } from '../../store/slices/attributeSlice';
 import { BaseMessage, PlayerData } from './hostTypes';
 import Toast from 'react-native-toast-message';
 import { getGunWebSocket } from '../gun/gunGlobalWebSocket';
 import {parseStartBattleMessage} from '../gun/gunTypes';
+
+interface BattleMessageData {
+  key: string;
+  for_gun: Record<string, number>;
+  for_vest: Record<string, number>;
+}
 
 class HostGlobalWebSocketService {
   private static instance: HostGlobalWebSocketService;
@@ -32,10 +39,10 @@ class HostGlobalWebSocketService {
       
       try {
         await this.wsService.connect();
-        store.dispatch(setConnectionStatus(true));
+        
       } catch (error) {
         console.error('Failed to connect:', error);
-        store.dispatch(setConnectionStatus(false));
+        
         throw error;
       }
     }
@@ -76,12 +83,34 @@ class HostGlobalWebSocketService {
       console.log('frame data 23:', frame);
       if (frame?.Data) {
         try {
-          // Parse the message directly from frame.Data
+          const battleData = frame.Data as BattleMessageData;
+          
+          // Update attribute values in the store
+          store.dispatch(updateAttributeValues({
+            for_gun: battleData.for_gun,
+            for_vest: battleData.for_vest
+          }));
+    
+          // Continue with the existing battle message parsing and sending
           const battleMessage = parseStartBattleMessage(frame.Data);
           getGunWebSocket().sendMessage(battleMessage);
         } catch (error) {
-          console.error('Failed to parse start battle message:', error);
+          console.error('Failed to process battle data:', error);
         }
+      }
+    });
+
+    this.wsService.addMessageListener(24, (frame: BaseMessage) => {
+      console.log('frame data 24:', frame);
+      if (frame?.Data) {
+        store.dispatch(setAttributes(frame.Data));
+      }
+    });
+
+    this.wsService.addMessageListener(25, (frame: BaseMessage) => {
+      console.log('frame data 24:', frame);
+      if (frame?.Data) {
+        store.dispatch(updatePlayerInfo(frame.Data as PlayerData));
       }
     });
 
@@ -105,7 +134,11 @@ class HostGlobalWebSocketService {
         });
       }     
     });
-
+    // In setupMessageHandlers()
+    this.wsService.addMessageListener(999, (frame: BaseMessage) => {
+      console.log('Heartbeat received');
+      // You can handle the server's response to heartbeat here if needed
+    });
     
 
     // Add more global message handlers here
@@ -113,7 +146,13 @@ class HostGlobalWebSocketService {
 
   public sendMessage<T>(actionCode: number, messageType: number, message: string = "", data: T | null = null): void {
     if (!this.wsService) {
-      throw new Error('WebSocket not initialized. Call connect() first.');
+      Toast.show({
+        type: 'error',
+        text1: 'Please connect to Host first',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+      return;
     }
     this.wsService.sendMessage(actionCode, messageType, message, data);
   }
@@ -121,7 +160,7 @@ class HostGlobalWebSocketService {
   public disconnect(): void {
     if (this.wsService) {
       this.wsService.disconnect();
-      store.dispatch(setConnectionStatus(false));
+      
     }
   }
 
